@@ -13,6 +13,6 @@ let get_int line =
 
 let () =
   let sum =
-    Sys.argv.(1) |> get_list_fo_line get_int |> List.fold_left ( + ) 0
+    Sys.argv.(1) |> get_list_of_line get_int |> List.fold_left ( + ) 0
   in
   print_int sum
