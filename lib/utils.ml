@@ -1,4 +1,4 @@
-let get_list_fo_line parse_line filename =
+let get_list_of_line parse_line filename =
   let input_channel = open_in filename in
   let rec loop acc =
     match input_line input_channel with
