@@ -10,3 +10,6 @@ let get_list_of_line parse_line filename =
         loop (item :: acc)
   in
   List.rev (loop [])
+
+let sum = List.fold_left ( + ) 0
+let compose f g x = f (g x)

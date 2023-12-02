@@ -7,11 +7,13 @@ let red_cubes = 12
 let green_cubes = 13
 let blue_cubes = 14
 
+(* "1 red" -> (1, "red") *)
 let parse_cube line =
   match String.split_on_char ' ' line with
   | [ num; color ] -> Some (int_of_string num, color)
   | _ -> None
 
+(* "1 red; 2 green; 3 blue" -> { red = 1; green = 2; blue = 3 } *)
 let parse_cube_set line =
   let parts = String.split_on_char ',' line |> List.map String.trim in
   let cube_set = { red = 0; green = 0; blue = 0 } in
@@ -26,6 +28,30 @@ let parse_cube_set line =
           | _ -> acc)
       | None -> acc)
     cube_set parts
+
+let get_fweset_of_cube_set cube_sets =
+  List.fold_left
+    (fun acc cube_set ->
+      let acc =
+        if cube_set.red > acc.red then { acc with red = cube_set.red } else acc
+      in
+      let acc =
+        if cube_set.blue > acc.blue then { acc with blue = cube_set.blue }
+        else acc
+      in
+      let acc =
+        if cube_set.green > acc.green then { acc with green = cube_set.green }
+        else acc
+      in
+      acc)
+    { red = 0; green = 0; blue = 0 }
+    cube_sets
+
+let power_of_set cube_set =
+  let red_num = if cube_set.red = 0 then 1 else cube_set.red in
+  let blue_num = if cube_set.blue = 0 then 1 else cube_set.blue in
+  let green_num = if cube_set.green = 0 then 1 else cube_set.green in
+  red_num * blue_num * green_num
 
 let parse_game_id line =
   match String.split_on_char ' ' line with
@@ -53,10 +79,16 @@ let get_possible_game_id game =
   then game.id
   else 0
 
+(* part 1 solution *)
+let _part1_parse = compose get_possible_game_id parse_game
+
+(* part 2 solution *)
+let part2_parse line =
+  line |> parse_game |> fun g ->
+  get_fweset_of_cube_set g.set_list |> power_of_set
+
 let () =
   let sum =
-    Sys.argv.(1)
-    |> get_list_of_line (fun s -> s |> parse_game |> get_possible_game_id)
-    |> List.fold_left ( + ) 0
+    Sys.argv.(1) |> get_list_of_line part2_parse |> List.fold_left ( + ) 0
   in
   print_int sum
