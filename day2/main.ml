@@ -29,7 +29,7 @@ let parse_cube_set line =
       | None -> acc)
     cube_set parts
 
-let get_fweset_of_cube_set cube_sets =
+let get_fewset_of_cube_set cube_sets =
   List.fold_left
     (fun acc cube_set ->
       let acc =
@@ -85,7 +85,7 @@ let _part1_parse = compose get_possible_game_id parse_game
 (* part 2 solution *)
 let part2_parse line =
   line |> parse_game |> fun g ->
-  get_fweset_of_cube_set g.set_list |> power_of_set
+  get_fewset_of_cube_set g.set_list |> power_of_set
 
 let () =
   let sum =
