@@ -104,66 +104,70 @@ let get_range_by_index idx (arr : char array) =
     else if not (is_digit arr.(idx)) then idx
     else find_right (idx + 1)
   in
-  (find_left idx, find_right idx)
+  if is_digit arr.(idx) then Some (find_left idx, find_right idx) else None
+
+let get_range idx arr =
+  let range = ref (get_range_by_index idx arr) in
+  (if idx - 1 >= 0 && is_digit arr.(idx - 1) then
+     let range' = get_range_by_index (idx - 1) arr in
+     match (range', !range) with
+     | Some (s', e'), Some (s, e) -> range := Some (Int.min s s', Int.max e e')
+     | option, None -> range := option
+     | None, option -> range := option);
+  (if idx + 1 < Array.length arr && is_digit arr.(idx + 1) then
+     let range' = get_range_by_index (idx + 1) arr in
+     match (range', !range) with
+     | Some (s', e'), Some (s, e) -> range := Some (Int.min s s', Int.max e e')
+     | option, None -> range := option
+     | None, option -> range := option);
+  !range
 
 let product = List.fold_left ( * ) 1
 
-let get_max_range idx arr =
-  let range = ref None in
-
-  (if is_digit arr.(idx) then
-     let start_idx', end_idx' = get_range_by_index idx arr in
-     match !range with
-     | Some (start_idx, end_idx) ->
-         range := Some (Int.min start_idx start_idx', Int.max end_idx end_idx')
-     | None -> range := Some (start_idx', end_idx'));
-
-  (if idx - 1 >= 0 && is_digit arr.(idx - 1) then
-     let start_idx', end_idx' = get_range_by_index (idx - 1) arr in
-     match !range with
-     | Some (start_idx, end_idx) ->
-         range := Some (Int.min start_idx start_idx', Int.max end_idx end_idx')
-     | None -> range := Some (start_idx', end_idx'));
-
-  (if idx + 1 < Array.length arr && is_digit arr.(idx + 1) then
-     let start_idx', end_idx' = get_range_by_index (idx + 1) arr in
-     match !range with
-     | Some (start_idx, end_idx) ->
-         range := Some (Int.min start_idx start_idx', Int.max end_idx end_idx')
-     | None -> range := Some (start_idx', end_idx'));
-  !range
-
-let get_gear_product (arr : board) =
+let get_gear_product board =
   let total = ref 0 in
-  let arr_rows = Array.length arr in
+  let row_length = Array.length board in
   Array.iteri
     (fun row row_arr ->
       Array.iteri
         (fun col c ->
-          if c = '*' then (
-            let num_list = ref [] in
-            if row - 1 >= 0 then
-              num_list :=
-                List.append !num_list
-                  ( get_max_range col arr.(row - 1) |> fun range_option ->
-                    match range_option with
-                    | Some range -> get_range_of_numbers arr.(row - 1) range
-                    | None -> [] );
-            if row + 1 < arr_rows then
-              num_list :=
-                List.append !num_list
-                  ( get_max_range col arr.(row + 1) |> fun range_option ->
-                    match range_option with
-                    | Some range -> get_range_of_numbers arr.(row + 1) range
-                    | None -> [] );
-            if List.length !num_list > 0 then
-              total := !total + product !num_list;
-            ()))
+          let num_list = ref [] in
+          (if
+             c = '*'
+             && (col - 1 < 0 || not (is_digit row_arr.(col - 1)))
+             && (col + 1 >= Array.length row_arr
+                || not (is_digit row_arr.(col + 1)))
+           then
+             let _ =
+               if row - 1 >= 0 then
+                 match get_range col board.(row - 1) with
+                 | Some range ->
+                     num_list :=
+                       !num_list @ get_range_of_numbers board.(row - 1) range
+                 | None -> ()
+             in
+             let _ =
+               if row + 1 < row_length then
+                 match get_range col board.(row + 1) with
+                 | Some range ->
+                     num_list :=
+                       !num_list @ get_range_of_numbers board.(row + 1) range
+                 | None -> ()
+             in
+             ());
+
+          (if List.length !num_list > 1 then
+             let _ =
+               !num_list |> List.map string_of_int |> String.concat ","
+               |> print_string |> print_newline
+             in
+             total := !total + product !num_list);
+          ())
         row_arr)
-    arr;
+    board;
   !total
 
 let () =
   let board = Sys.argv.(1) |> get_list_of_line line_to_chars |> Array.of_list in
-  let sum = get_gear_product board in
-  print_int sum
+  let result = get_gear_product board in
+  print_int result
