@@ -127,44 +127,35 @@ let product = List.fold_left ( * ) 1
 let get_gear_product board =
   let total = ref 0 in
   let row_length = Array.length board in
-  Array.iteri
-    (fun row row_arr ->
-      Array.iteri
-        (fun col c ->
-          let num_list = ref [] in
-          (if
-             c = '*'
-             && (col - 1 < 0 || not (is_digit row_arr.(col - 1)))
-             && (col + 1 >= Array.length row_arr
-                || not (is_digit row_arr.(col + 1)))
-           then
-             let _ =
-               if row - 1 >= 0 then
-                 match get_range col board.(row - 1) with
-                 | Some range ->
-                     num_list :=
-                       !num_list @ get_range_of_numbers board.(row - 1) range
-                 | None -> ()
-             in
-             let _ =
-               if row + 1 < row_length then
-                 match get_range col board.(row + 1) with
-                 | Some range ->
-                     num_list :=
-                       !num_list @ get_range_of_numbers board.(row + 1) range
-                 | None -> ()
-             in
-             ());
-
-          (if List.length !num_list > 1 then
-             let _ =
-               !num_list |> List.map string_of_int |> String.concat ","
-               |> print_string |> print_newline
-             in
-             total := !total + product !num_list);
-          ())
-        row_arr)
-    board;
+  for row = 0 to row_length - 1 do
+    let col_length = Array.length board.(row) in
+    for col = 0 to col_length - 1 do
+      let c = board.(row).(col) in
+      if c = '*' then (
+        let num_list =
+          ref
+            ( get_range col board.(row) |> fun range_option ->
+              match range_option with
+              | Some range -> get_range_of_numbers board.(row) range
+              | None -> [] )
+        in
+        if row - 1 >= 0 then
+          num_list :=
+            !num_list
+            @ ( get_range col board.(row - 1) |> fun range_option ->
+                match range_option with
+                | Some range -> get_range_of_numbers board.(row - 1) range
+                | None -> [] );
+        if row + 1 < row_length then
+          num_list :=
+            !num_list
+            @ ( get_range col board.(row + 1) |> fun range_option ->
+                match range_option with
+                | Some range -> get_range_of_numbers board.(row + 1) range
+                | None -> [] );
+        if List.length !num_list = 2 then total := !total + product !num_list)
+    done
+  done;
   !total
 
 let () =
