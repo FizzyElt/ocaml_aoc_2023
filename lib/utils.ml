@@ -11,5 +11,8 @@ let get_list_of_line parse_line filename =
   in
   List.rev (loop [])
 
-let sum = List.fold_left ( + ) 0
+let sum_of_list = List.fold_left ( + ) 0
+let product_of_list = List.fold_left ( * ) 1
+let sum_of_array = Array.fold_left ( + ) 0
+let product_of_array = Array.fold_left ( * ) 1
 let compose f g x = f (g x)

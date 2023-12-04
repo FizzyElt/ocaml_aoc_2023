@@ -122,8 +122,6 @@ let get_range idx arr =
      | None, option -> range := option);
   !range
 
-let product = List.fold_left ( * ) 1
-
 let get_gear_product board =
   let total = ref 0 in
   let row_length = Array.length board in
@@ -153,7 +151,8 @@ let get_gear_product board =
                 match range_option with
                 | Some range -> get_range_of_numbers board.(row + 1) range
                 | None -> [] );
-        if List.length !num_list = 2 then total := !total + product !num_list)
+        if List.length !num_list = 2 then
+          total := !total + product_of_list !num_list)
     done
   done;
   !total

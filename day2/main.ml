@@ -88,7 +88,5 @@ let part2_parse line =
   get_fewset_of_cube_set g.set_list |> power_of_set
 
 let () =
-  let sum =
-    Sys.argv.(1) |> get_list_of_line part2_parse |> List.fold_left ( + ) 0
-  in
+  let sum = Sys.argv.(1) |> get_list_of_line part2_parse |> sum_of_list in
   print_int sum
