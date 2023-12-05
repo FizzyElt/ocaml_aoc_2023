@@ -63,14 +63,14 @@ let seeds_to_map seeds =
   aux seeds [] |> List.sort (fun (a, _, _) (b, _, _) -> Int.compare a b)
 
 let put_miss_range map =
-  let d, _, _ = List.hd map in
-  let map = if d <> 0 then (0, 0, d) :: map else map in
+  let _, s, _ = List.hd map in
+  let map = if s <> 0 then (0, 0, s) :: map else map in
   let rec aux ll res =
     match ll with
     | [] -> res
     | (d, s, len) :: [] ->
         aux []
-          ((d + len, d + len, Int.max_int - (d + len)) :: (d, s, len) :: res)
+          ((s + len, s + len, Int.max_int - (s + len)) :: (d, s, len) :: res)
     | s :: l -> aux l (s :: res)
   in
   aux map [] |> List.rev
@@ -81,7 +81,7 @@ let get_min_range (s1, e1) (s2, e2) = (Int.max s1 s2, Int.min e1 e2)
 let rec find_init_range (range : int * int) (maps : (int * int * int) list list)
     =
   match maps with
-  | [] -> None
+  | [] -> Some range
   | map :: maps ->
       List.fold_left
         (fun acc (d, s, len) ->
