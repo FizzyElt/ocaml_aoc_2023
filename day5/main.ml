@@ -15,7 +15,7 @@ let parse_map lines =
         else aux ll (parse_num line :: map_list) result
   in
   aux lines [] [] |> List.rev |> List.tl
-  |> List.map (List.sort (fun (a, _, _) (b, _, _) -> Int.compare a b))
+  |> List.map (List.sort (fun (_, a, _) (_, b, _) -> Int.compare a b))
 
 let parse_seeds line =
   match String.split_on_char ':' line with
@@ -53,14 +53,22 @@ let _part1_solution () =
   let result = find_minimal_location seeds maps in
   print_int result
 
-let seeds_to_map seeds =
+let print_range ((s, e) : int * int) = Printf.sprintf "(%d, %d)" s e
+
+let print_ranges (ranges : (int * int) list) =
+  List.iter (fun r -> Printf.printf "%s" (print_range r)) ranges
+
+let print_map_item ((d, s, l) : int * int * int) =
+  Printf.sprintf "(%d, %d, %d)" d s l
+
+let seeds_to_range seeds =
   let rec aux ll result =
     match ll with
-    | seed :: len :: rest -> aux rest ((seed, seed, len) :: result)
+    | seed :: len :: rest -> aux rest ((seed, seed + len) :: result)
     | _ :: [] -> result
     | [] -> result
   in
-  aux seeds [] |> List.sort (fun (a, _, _) (b, _, _) -> Int.compare a b)
+  aux seeds [] |> List.sort (fun (a, _) (b, _) -> Int.compare a b)
 
 let put_miss_range map =
   let _, s, _ = List.hd map in
@@ -77,26 +85,46 @@ let put_miss_range map =
 
 let is_overlap (s1, e1) (s2, e2) = not (e1 <= s2 || s1 >= e2)
 let get_min_range (s1, e1) (s2, e2) = (Int.max s1 s2, Int.min e1 e2)
+let get_max_range (s1, e1) (s2, e2) = (Int.min s1 s2, Int.max e1 e2)
 
-let rec find_init_range (range : int * int) (maps : (int * int * int) list list)
-    =
+let merge_ranges ranges =
+  ranges
+  |> List.sort (fun (a, _) (b, _) -> Int.compare a b)
+  |> List.fold_left
+       (fun acc range ->
+         if List.length acc = 0 then range :: acc
+         else
+           let head, tail = (List.hd acc, List.tl acc) in
+           if is_overlap range head then get_max_range range head :: tail
+           else if snd range > snd head then range :: head :: tail
+           else head :: range :: tail)
+       []
+
+let rec find_init_ranges (ranges : (int * int) list)
+    (maps : (int * int * int) list list) =
+  let merged_ranges = merge_ranges ranges in
   match maps with
-  | [] -> Some range
+  | [] -> merged_ranges
   | map :: maps ->
-      List.fold_left
-        (fun acc (d, s, len) ->
-          match acc with
-          | None ->
-              if is_overlap range (d, d + len) then
-                let min_s, min_e = get_min_range range (d, d + len) in
-                let diff = s - d in
-                let new_range = (min_s + diff, min_e + diff) in
-                find_init_range new_range maps
-              else acc
-          | some -> some)
-        None map
+      let next_ranges =
+        List.concat_map
+          (fun range ->
+            List.fold_left
+              (fun acc (d, s, len) ->
+                if is_overlap range (s, s + len) then (
+                  let min_s, min_e = get_min_range range (s, s + len) in
+                  let offset = d - s in
+                  let new_range = (min_s + offset, min_e + offset) in
+                  Printf.printf "%s, %s\n" (print_range range)
+                    (print_map_item (d, s, len));
+                  new_range :: acc)
+                else acc)
+              [] map)
+          merged_ranges
+      in
+      find_init_ranges next_ranges maps
 
-let print_maps (maps : (int * int * int) list list) =
+let _print_maps (maps : (int * int * int) list list) =
   List.iter
     (fun map ->
       List.iter (fun (d, s, l) -> Printf.printf "(%d, %d, %d) " d s l) map;
@@ -110,11 +138,9 @@ let part2_solution () =
   in
   let seeds, maps = parse_data lines in
   let new_maps = maps |> List.map put_miss_range in
-  let new_maps = seeds_to_map seeds :: new_maps |> List.rev in
-  print_maps new_maps;
-  let result = find_init_range (0, Int.max_int) new_maps in
-  match result with
-  | Some (s, e) -> Printf.printf "%d, %d" s e
-  | None -> print_endline "not found"
+  let result =
+    find_init_ranges (seeds_to_range seeds) new_maps |> merge_ranges
+  in
+  print_ranges (List.sort (fun (s1, _) (s2, _) -> Int.compare s1 s2) result)
 
 let () = part2_solution ()
