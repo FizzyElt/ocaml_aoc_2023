@@ -53,14 +53,6 @@ let _part1_solution () =
   let result = find_minimal_location seeds maps in
   print_int result
 
-let print_range ((s, e) : int * int) = Printf.sprintf "(%d, %d)" s e
-
-let print_ranges (ranges : (int * int) list) =
-  List.iter (fun r -> Printf.printf "%s" (print_range r)) ranges
-
-let print_map_item ((d, s, l) : int * int * int) =
-  Printf.sprintf "(%d, %d, %d)" d s l
-
 let seeds_to_range seeds =
   let rec aux ll result =
     match ll with
@@ -100,7 +92,7 @@ let merge_ranges ranges =
            else head :: range :: tail)
        []
 
-let rec find_init_ranges (ranges : (int * int) list)
+let rec find_possible_ranges (ranges : (int * int) list)
     (maps : (int * int * int) list list) =
   let merged_ranges = merge_ranges ranges in
   match maps with
@@ -111,25 +103,16 @@ let rec find_init_ranges (ranges : (int * int) list)
           (fun range ->
             List.fold_left
               (fun acc (d, s, len) ->
-                if is_overlap range (s, s + len) then (
+                if is_overlap range (s, s + len) then
                   let min_s, min_e = get_min_range range (s, s + len) in
                   let offset = d - s in
                   let new_range = (min_s + offset, min_e + offset) in
-                  Printf.printf "%s, %s\n" (print_range range)
-                    (print_map_item (d, s, len));
-                  new_range :: acc)
+                  new_range :: acc
                 else acc)
               [] map)
           merged_ranges
       in
-      find_init_ranges next_ranges maps
-
-let _print_maps (maps : (int * int * int) list list) =
-  List.iter
-    (fun map ->
-      List.iter (fun (d, s, l) -> Printf.printf "(%d, %d, %d) " d s l) map;
-      print_endline "")
-    maps
+      find_possible_ranges next_ranges maps
 
 let part2_solution () =
   let lines =
@@ -139,8 +122,12 @@ let part2_solution () =
   let seeds, maps = parse_data lines in
   let new_maps = maps |> List.map put_miss_range in
   let result =
-    find_init_ranges (seeds_to_range seeds) new_maps |> merge_ranges
+    find_possible_ranges (seeds_to_range seeds) new_maps
+    |> merge_ranges
+    |> List.sort (fun (s1, _) (s2, _) -> Int.compare s1 s2)
   in
-  print_ranges (List.sort (fun (s1, _) (s2, _) -> Int.compare s1 s2) result)
+  let mininmal_value = result |> List.hd |> fst in
+
+  print_int mininmal_value
 
 let () = part2_solution ()
