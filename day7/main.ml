@@ -52,24 +52,24 @@ module HandCard = struct
     let pairs = List.filter (Int.equal 2) count_list |> List.length in
 
     if five then Five
-    else if four && jokers = 1 then Five
-    else if four then Four
-    else if three && pairs = 1 then FullHouse
-    else if three && jokers = 2 then Five
-    else if three && jokers = 1 then Four
-    else if three then Three
-    else if pairs = 2 && jokers = 1 then FullHouse
-    else if pairs = 2 then TwoPair
-    else if pairs = 1 && jokers = 3 then Five
-    else if pairs = 1 && jokers = 2 then Four
-    else if pairs = 1 && jokers = 1 then Three
-    else if pairs = 1 then OnePair
-    else if jokers = 5 then Five (* JJJJJ *)
-    else if jokers = 4 then Five (* JJJJA -> AAAAA *)
-    else if jokers = 3 then Four (* JJJQA -> AAAQA *)
-    else if jokers = 2 then Three (* JJQA1 -> AAQA1 *)
-    else if jokers = 1 then OnePair (* J2QA1 -> A2QA1 *)
-    else HighCard
+    else if four then match jokers with 1 -> Five | _ -> Four
+    else if three then
+      match (pairs, jokers) with
+      | 1, _ -> FullHouse
+      | _, 2 -> Five
+      | _, 1 -> Four
+      | _ -> Three
+    else if pairs = 2 then match jokers with 1 -> FullHouse | _ -> TwoPair
+    else if pairs = 1 then
+      match jokers with 3 -> Five | 2 -> Four | 1 -> Three | _ -> OnePair
+    else
+      match jokers with
+      | 5 -> Five (* JJJJJ *)
+      | 4 -> Five (* JJJJA -> AAAAA *)
+      | 3 -> Four (* JJJQA -> AAAQA *)
+      | 2 -> Three (* JJQA1 -> AAQA1 *)
+      | 1 -> OnePair (* J2QA1 -> A2QA1 *)
+      | _ -> HighCard
 
   let make_hand (cards_str : string) : hand =
     let cards = collect_cards cards_str in
