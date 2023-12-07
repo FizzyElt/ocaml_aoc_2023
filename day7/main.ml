@@ -27,7 +27,7 @@ module HandCard = struct
   let card_order card =
     let index_opt =
       List.find_index (Char.equal card)
-        [ 'A'; 'K'; 'Q'; 'J'; 'T'; '9'; '8'; '7'; '6'; '5'; '4'; '3'; '2' ]
+        [ 'A'; 'K'; 'Q'; 'T'; '9'; '8'; '7'; '6'; '5'; '4'; '3'; '2'; 'J' ]
     in
     match index_opt with Some index -> index | None -> failwith "bad card"
 
@@ -41,19 +41,34 @@ module HandCard = struct
       CharMap.empty hand_chars
 
   let get_hand_type (cards : int CharMap.t) =
-    let count_list = CharMap.to_list cards |> List.map snd in
+    let jokers, new_cards =
+      ( CharMap.find_opt 'J' cards |> Option.value ~default:0,
+        CharMap.remove 'J' cards )
+    in
+    let count_list = CharMap.to_list new_cards |> List.map snd in
     let five = List.exists (Int.equal 5) count_list in
-
     let four = List.exists (Int.equal 4) count_list in
     let three = List.exists (Int.equal 3) count_list in
     let pairs = List.filter (Int.equal 2) count_list |> List.length in
 
     if five then Five
+    else if four && jokers = 1 then Five
     else if four then Four
     else if three && pairs = 1 then FullHouse
+    else if three && jokers = 2 then Five
+    else if three && jokers = 1 then Four
     else if three then Three
+    else if pairs = 2 && jokers = 1 then FullHouse
     else if pairs = 2 then TwoPair
+    else if pairs = 1 && jokers = 3 then Five
+    else if pairs = 1 && jokers = 2 then Four
+    else if pairs = 1 && jokers = 1 then Three
     else if pairs = 1 then OnePair
+    else if jokers = 5 then Five (* JJJJJ *)
+    else if jokers = 4 then Five (* JJJJA -> AAAAA *)
+    else if jokers = 3 then Four (* JJJQA -> AAAQA *)
+    else if jokers = 2 then Three (* JJQA1 -> AAQA1 *)
+    else if jokers = 1 then OnePair (* J2QA1 -> A2QA1 *)
     else HighCard
 
   let make_hand (cards_str : string) : hand =
